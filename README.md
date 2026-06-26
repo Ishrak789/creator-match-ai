@@ -1,6 +1,6 @@
 # CreatorMatch AI
 
-**Live Demo:** Coming soon
+**Live Demo:** Live Demo: https://creator-match-ai.streamlit.app
 
 CreatorMatch AI is a Streamlit product prototype that turns an advertiser campaign brief into ranked creator recommendations. It shows how creator discovery can become more explainable, brand-safe, and action-oriented by combining structured scoring with creator-ready strategy outputs.
 
@@ -80,9 +80,3 @@ Niche fit compares the campaign category, goal, and product benefit against the 
    ```
 
 3. Open the local Streamlit URL shown in your terminal.
-
-## Relevance to TikTok PM Roles
-
-This project mirrors work relevant to TikTok Creative Product Manager roles: translating advertiser goals into creator strategy, designing tools for creative decision-making, balancing performance with brand safety, and making recommendations easy for stakeholders to trust.
-
-It is also relevant to AI Product Manager roles because it structures messy campaign inputs, creates explainable ranking logic, generates personalized recommendation outputs, and demonstrates how AI-like product workflows can remain useful even with transparent rule-based fallback logic.
