@@ -1,6 +1,6 @@
 # CreatorMatch AI
 
-**Live Demo:** Live Demo: https://creator-match-ai.streamlit.app
+**Live Demo:** https://creator-match-ai.streamlit.app
 
 CreatorMatch AI is a Streamlit product prototype that turns an advertiser campaign brief into ranked creator recommendations. It shows how creator discovery can become more explainable, brand-safe, and action-oriented by combining structured scoring with creator-ready strategy outputs.
 
