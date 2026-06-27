@@ -46,16 +46,16 @@ Niche fit compares the campaign category, goal, and product benefit against the 
 ## Screenshots
 
 ### Campaign Brief Input
+![Campaign Brief Input](assets/input_form.png)
 
-![Campaign brief input form](assets/input_form.png)
-
-### Ranked Creator Results
-
-![Ranked creator results](assets/ranked_results.png)
+### Ranked Creator Matches
+![Ranked Creator Matches](assets/ranked_results.png)
 
 ### Creator-Ready Brief
+![Creator-Ready Brief](assets/creator_brief.png)
 
-![Creator-ready brief](assets/creator_brief.png)
+### AIGC Creative Pack
+![AIGC Creative Pack](assets/aigc_creative_pack.png)
 
 ## Tech Stack
 
