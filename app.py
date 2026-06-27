@@ -176,11 +176,17 @@ def creator_format_strategy(row: pd.Series) -> Dict[str, str]:
     style = normalize_text(row["content_style"])
     profile = f"{niche} {style}"
 
-    if any(word in profile for word in ["college", "student", "dorm", "humor", "skit"]):
+    if any(word in profile for word in ["humor", "skit", "funny"]):
         return {
             "angle": "Build a class-crash or dorm-life skit where the product naturally solves a student moment.",
             "hook": "Open on a familiar campus problem, then let the product become the punchline or quick fix.",
             "format": "relatable student humor",
+        }
+    if any(word in profile for word in ["college", "student", "dorm", "campus", "day in the life"]):
+        return {
+            "angle": "Place the product inside a campus routine, dorm reset, study session, or day-in-the-life beat.",
+            "hook": "Start inside the creator's daily campus rhythm, then show where the product fits without breaking the routine.",
+            "format": "college lifestyle routine",
         }
     if any(word in profile for word in ["fitness", "workout", "gym", "performance"]):
         return {
@@ -235,20 +241,30 @@ def creator_format_strategy(row: pd.Series) -> Dict[str, str]:
 def recommend_kpis(goal: str, row: pd.Series = None) -> tuple:
     goal_text = normalize_text(goal)
     format_text = normalize_text(row["content_style"]) if row is not None else ""
+    niche_text = normalize_text(row["niche"]) if row is not None else ""
+    profile = f"{niche_text} {format_text}"
 
-    if any(word in goal_text for word in ["creator", "ugc", "testing", "test", "creative"]):
-        secondary = "Hook retention" if any(word in format_text for word in ["skit", "reaction", "transition"]) else "Save/share rate"
-        return "Engagement rate", secondary
     if any(word in goal_text for word in ["conversion", "sales", "purchase", "purchases"]):
-        secondary = "ROAS" if "shop" in goal_text or "purchase" in goal_text else "CPA"
+        secondary = "CPA/ROAS" if "shop" in goal_text or "purchase" in goal_text else "CPA"
         return "Conversion rate", secondary
+    if any(word in goal_text for word in ["awareness", "reach", "launch"]):
+        return "Video views", "Reach"
+    if any(word in goal_text for word in ["creator", "ugc", "testing", "test", "creative"]):
+        secondary = "Shares" if any(word in profile for word in ["skit", "reaction", "humor"]) else "Save/share rate"
+        return "Engagement rate", secondary
     if any(word in goal_text for word in ["traffic", "site", "app", "landing"]):
         return "CTR", "Landing page visits"
-    if any(word in goal_text for word in ["awareness", "reach", "launch"]):
-        secondary = "Engagement rate" if any(word in format_text for word in ["skit", "reaction", "grwm"]) else "Video views"
-        return "Reach", secondary
     if any(word in goal_text for word in ["engagement", "community", "ugc"]):
         return "Engagement rate", "Save/share rate"
+
+    if any(word in profile for word in ["skit", "reaction", "humor", "taste", "gaming"]):
+        return "Engagement rate", "Shares/CTR"
+    if any(word in profile for word in ["demo", "fitness", "product"]):
+        return "Conversion rate", "CPA/ROAS"
+    if any(word in profile for word in ["explainer", "review", "tech", "finance"]):
+        return "CTR", "Landing-page visits/saves"
+    if any(word in profile for word in ["lifestyle", "routine", "grwm", "transition", "wellness"]):
+        return "Saves", "Completion rate"
     return "Engagement rate", "Video views"
 
 
@@ -305,19 +321,344 @@ def fit_reason(row: pd.Series, brief: Dict[str, object]) -> str:
 def fallback_creator_brief(row: pd.Series, brief: Dict[str, object]) -> str:
     primary_kpi, secondary_kpi = recommend_kpis(brief["campaign_goal"], row)
     strategy = creator_format_strategy(row)
+    direction = creative_pack_direction(row)
     return (
-        f"Creator brief for {row['creator_name']}: Make a {brief['tone'].lower()} TikTok for "
-        f"{brief['brand_name']} that feels native to your {row['niche']} community and your "
-        f"{row['content_style']} format. {strategy['hook']} Show the product benefit, "
-        f"{brief['product_benefit']}, through a real moment your {row['audience_age']} audience would recognize. "
-        f"Reference the kind of category familiarity you have from {row['past_campaign_type']} work, keep the brand "
-        f"mention conversational, and close with one clear next step. Optimize for {primary_kpi}; use "
-        f"{secondary_kpi} to judge whether the format is worth scaling."
+        f"Creator brief for {row['creator_name']}: Produce a {brief['tone'].lower()} TikTok in your "
+        f"{row['content_style']} format, shaped as a {direction['archetype']} for your {row['niche']} community. "
+        f"{strategy['hook']} Bring in {brief['brand_name']} as the natural answer to {brief['product_benefit']} "
+        f"for viewers around {row['audience_age']}. Use your past {row['past_campaign_type']} experience as context, "
+        f"keep the claim language appropriate for a {int(row['brand_safety_score'])}/100 safety profile, and make the "
+        f"${int(row['estimated_cost']):,} creator fee work by focusing on one memorable product moment. Optimize for "
+        f"{primary_kpi}; use {secondary_kpi} and the creator's {row['engagement_rate']}% engagement rate to judge "
+        f"whether the format is worth scaling."
     )
 
 
 def generate_creator_brief(row: pd.Series, brief: Dict[str, object]) -> str:
     return fallback_creator_brief(row, brief)
+
+
+def tone_directive(tone: str) -> str:
+    tone_text = normalize_text(tone)
+    directives = {
+        "playful": "light, punchy, and conversational",
+        "educational": "clear, useful, and proof-led",
+        "aspirational": "polished, confident, and lifestyle-led",
+        "bold": "direct, high-energy, and scroll-stopping",
+        "calm": "grounded, warm, and reassuring",
+    }
+    return directives.get(tone_text, f"{tone} and native to TikTok")
+
+
+def audience_label(target_audience: str, creator_age: object) -> str:
+    if target_audience:
+        return target_audience
+    return f"{creator_age} viewers"
+
+
+def creative_pack_direction(row: pd.Series) -> Dict[str, object]:
+    niche = normalize_text(row["niche"])
+    style = normalize_text(row["content_style"])
+    profile = f"{niche} {style}"
+
+    if any(word in profile for word in ["humor", "funny", "skit"]):
+        return {
+            "archetype": "comedy skit",
+            "hook_set": [
+                "POV: the group project is due tonight and everyone is running on fumes",
+                "That 3 PM crash before finals when the dorm becomes a survival show",
+                "When class starts in five minutes and your routine needs a cheat code",
+            ],
+            "caption_voice": "campus-joke energy with a clear product payoff",
+            "thumbnail_scene": "student life, dorm room chaos, textbooks, classmates, and a punchline-ready expression",
+            "storyboard": [
+                ("0-3s", "Cold open on a class, finals, or group-project problem with a quick comedic reaction."),
+                ("3-6s", "Cut to the creator in dorm-life skit mode introducing the product as the unexpected fix."),
+                ("6-10s", "Escalate the joke with classmates reacting while the product benefit lands naturally."),
+                ("10-13s", "Show the before/after energy of the moment without making unrealistic claims."),
+                ("13-15s", "End on a punchline, brand frame, and share-friendly CTA."),
+            ],
+            "cta_style": "Tag the friend who hits the 3 PM crash first",
+        }
+    if any(word in profile for word in ["fitness", "workout", "gym", "performance", "demo"]):
+        return {
+            "archetype": "workout/product demo",
+            "hook_set": [
+                "What I use before the gym when I want my routine to feel less chaotic",
+                "Pre-workout checklist: bag, playlist, and the product I keep reaching for",
+                "Active lifestyle test: does this actually fit into a real training day?",
+            ],
+            "caption_voice": "high-energy routine proof with a product demo",
+            "thumbnail_scene": "gym bag, locker-room mirror, active routine setup, or mid-workout product moment",
+            "storyboard": [
+                ("0-3s", "Open with a gym-bag pack, warmup, or pre-workout routine beat."),
+                ("3-6s", "Show the product entering the routine with one clear use case."),
+                ("6-10s", "Demo the benefit during movement, prep, or recovery while keeping claims grounded."),
+                ("10-13s", "Cut to the creator's quick verdict for an active audience."),
+                ("13-15s", "Close with product in hand and a conversion-minded next step."),
+            ],
+            "cta_style": "Try it in your next routine and see if it earns a spot",
+        }
+    if any(word in profile for word in ["tech", "review", "app", "software"]):
+        return {
+            "archetype": "explainer/review",
+            "hook_set": [
+                "Is this actually worth it? I tested the feature people keep asking about",
+                "Feature breakdown: the one thing that makes this product easier to use",
+                "Side-by-side review: what changes after using this for a real task?",
+            ],
+            "caption_voice": "practical review language with a clean verdict",
+            "thumbnail_scene": "desk setup, phone or laptop screen, product review frame, and comparison labels",
+            "storyboard": [
+                ("0-3s", "Open at a desk setup with the review question or comparison on screen."),
+                ("3-6s", "Introduce the product and the exact feature being tested."),
+                ("6-10s", "Walk through a simple before/after or side-by-side use case."),
+                ("10-13s", "Give the creator's verdict tied to the campaign benefit."),
+                ("13-15s", "Point viewers to learn more, click, or save the review."),
+            ],
+            "cta_style": "Save this review or tap through for the full breakdown",
+        }
+    if any(word in profile for word in ["college", "student", "dorm", "campus", "day in the life"]):
+        return {
+            "archetype": "lifestyle routine",
+            "hook_set": [
+                "Day in the life: the campus routine step I did not expect to keep",
+                "Study session reset with the product that makes my dorm routine easier",
+                "Come with me from class to library and see where this fits in",
+            ],
+            "caption_voice": "natural campus lifestyle narration",
+            "thumbnail_scene": "campus walkway, dorm desk, backpack, study setup, or daily routine flat lay",
+            "storyboard": [
+                ("0-3s", "Start with a campus transition or dorm morning routine."),
+                ("3-6s", "Place the product in a real study, class, or reset moment."),
+                ("6-10s", "Show the routine benefit while the creator moves through the day."),
+                ("10-13s", "Add a quick creator reflection on why it fits student life."),
+                ("13-15s", "Close with a soft save-or-try CTA and clean brand frame."),
+            ],
+            "cta_style": "Save this for your next campus routine",
+        }
+    if any(word in profile for word in ["beauty", "skincare", "grwm"]):
+        return {
+            "archetype": "tutorial/routine",
+            "hook_set": [
+                "GRWM before class with the routine step I am keeping",
+                "Getting ready in a rush: where this fits before I leave",
+                "My quick routine when I want skin to feel fresh without overthinking it",
+            ],
+            "caption_voice": "beauty routine detail with a creator-to-camera feel",
+            "thumbnail_scene": "vanity, mirror, skincare shelf, product texture, or getting-ready setup",
+            "storyboard": [
+                ("0-3s", "Open mid-GRWM at the mirror with the creator naming the routine moment."),
+                ("3-6s", "Show product application or placement in the routine."),
+                ("6-10s", "Cut between texture, mirror check, and the creator explaining the benefit."),
+                ("10-13s", "Show the finished routine while avoiding exaggerated before/after claims."),
+                ("13-15s", "Close with a beauty-community CTA and product shot."),
+            ],
+            "cta_style": "Add it to your next GRWM if your routine needs this step",
+        }
+    if any(word in profile for word in ["food", "taste", "snack", "restaurant"]):
+        return {
+            "archetype": "taste-test reaction",
+            "hook_set": [
+                "First bite reaction: does this belong in the snack rotation?",
+                "Taste test with the pairing I did not expect to work this well",
+                "Snack pairing check: would I bring this to the next hangout?",
+            ],
+            "caption_voice": "reaction-first food language",
+            "thumbnail_scene": "first-bite expression, product next to a snack pairing, or split reaction frame",
+            "storyboard": [
+                ("0-3s", "Open on the first bite or sip reaction before explaining anything."),
+                ("3-6s", "Reveal the product and the pairing or taste-test setup."),
+                ("6-10s", "Give sensory notes and a fast creator reaction."),
+                ("10-13s", "Connect the flavor or use occasion to the campaign benefit."),
+                ("13-15s", "Close with a comment-or-share CTA for food discovery."),
+            ],
+            "cta_style": "Comment the pairing you would try with this",
+        }
+    if any(word in profile for word in ["finance", "fintech", "money", "budget"]):
+        return {
+            "archetype": "educational explainer",
+            "hook_set": [
+                "What I wish I knew before trying to budget smarter",
+                "Smart spending check: the simple habit I would start with",
+                "Budget-friendly breakdown: where this product can fit without the hype",
+            ],
+            "caption_voice": "clear financial education with careful, non-guaranteed language",
+            "thumbnail_scene": "phone app screen, simple budget visual, calculator, notes, and clean finance labels",
+            "storyboard": [
+                ("0-3s", "Open with the money question or mistake the audience recognizes."),
+                ("3-6s", "Introduce the product as a tool or habit support, not a guaranteed outcome."),
+                ("6-10s", "Break down one practical use case with simple on-screen labels."),
+                ("10-13s", "Summarize the takeaway and who it is best suited for."),
+                ("13-15s", "Close with a save, learn-more, or compare CTA."),
+            ],
+            "cta_style": "Save this before your next budget reset",
+        }
+    if any(word in profile for word in ["fashion", "outfit", "style", "transition"]):
+        return {
+            "archetype": "outfit/lifestyle transition",
+            "hook_set": [
+                "Fit check: styling this around one product moment",
+                "Outfit transition from basic to campaign-ready",
+                "Aesthetic test: does this belong in the final look?",
+            ],
+            "caption_voice": "style-led copy with a visual transformation",
+            "thumbnail_scene": "mirror shot, outfit transition frame, styled accessories, or before/after fit check",
+            "storyboard": [
+                ("0-3s", "Open on the final look, then snap back to the starting outfit."),
+                ("3-6s", "Introduce the product as part of the styling decision."),
+                ("6-10s", "Show two quick transitions or detail shots tied to the benefit."),
+                ("10-13s", "Reveal the complete look in motion."),
+                ("13-15s", "Close with a style CTA and brand/product frame."),
+            ],
+            "cta_style": "Save this fit idea for your next styling reset",
+        }
+    if any(word in profile for word in ["gaming", "live", "play"]):
+        return {
+            "archetype": "gaming reaction",
+            "hook_set": [
+                "Long session test: what stayed on my desk for squad night",
+                "Live reaction after using this during a focus-heavy match",
+                "Squad night setup check: does this help the session feel smoother?",
+            ],
+            "caption_voice": "creator reaction language for gaming sessions",
+            "thumbnail_scene": "gaming setup, monitor glow, headset, desk gear, or live-reaction face cam",
+            "storyboard": [
+                ("0-3s", "Open on a tense gameplay or squad-night reaction."),
+                ("3-6s", "Cut to the desk setup and introduce the product naturally."),
+                ("6-10s", "Show how it fits during focus, breaks, or the creator's session routine."),
+                ("10-13s", "Return to the reaction moment with a quick verdict."),
+                ("13-15s", "Close with a community CTA for gamers."),
+            ],
+            "cta_style": "Drop this into your next squad-night setup",
+        }
+    if any(word in profile for word in ["wellness", "calm", "mindful", "health"]):
+        return {
+            "archetype": "calm routine",
+            "hook_set": [
+                "Slow morning reset with the product I would keep in the routine",
+                "Night routine check: one small step for more balance",
+                "Reset with me when the day needs to feel less rushed",
+            ],
+            "caption_voice": "soft routine language with a grounded benefit",
+            "thumbnail_scene": "wellness shelf, nightstand, warm lighting, journal, or quiet lifestyle setup",
+            "storyboard": [
+                ("0-3s", "Open with a quiet morning, night, or reset ritual."),
+                ("3-6s", "Introduce the product as one small step in the routine."),
+                ("6-10s", "Show the creator using it while narrating the benefit calmly."),
+                ("10-13s", "Hold on a simple lifestyle moment that feels achievable."),
+                ("13-15s", "Close with a save-for-later CTA and gentle product frame."),
+            ],
+            "cta_style": "Save this for your next reset routine",
+        }
+
+    return {
+        "archetype": str(row["content_style"]),
+        "hook_set": [
+            "The product moment I did not expect to fit this naturally",
+            "Testing this in my usual routine so you do not have to guess",
+            "A quick creator check before you decide if this is for you",
+        ],
+        "caption_voice": "creator-native TikTok copy",
+        "thumbnail_scene": "authentic creator setup with product, face, and simple benefit cue",
+        "storyboard": [
+            ("0-3s", "Open with the creator's normal format and a clear audience tension."),
+            ("3-6s", "Introduce the product in context."),
+            ("6-10s", "Show one practical use case tied to the benefit."),
+            ("10-13s", "Add the creator's verdict."),
+            ("13-15s", "Close with a concise CTA."),
+        ],
+        "cta_style": "Check it out if this solves the same problem for you",
+    }
+
+
+def generate_aigc_creative_pack(row: pd.Series, brief: Dict[str, object]) -> Dict[str, object]:
+    direction = creative_pack_direction(row)
+    primary_kpi, secondary_kpi = recommend_kpis(brief["campaign_goal"], row)
+    audience = audience_label(brief["target_audience"], row["audience_age"])
+    tone = tone_directive(brief["tone"])
+    brand = brief["brand_name"] or "the brand"
+    category = brief["product_category"] or "the product"
+    benefit = brief["product_benefit"] or "the product benefit"
+    goal = brief["campaign_goal"] or "the campaign goal"
+    niche = row["niche"]
+    style = row["content_style"]
+    creator = row["creator_name"]
+    past_campaign = row["past_campaign_type"]
+    engagement_rate = row["engagement_rate"]
+    safety_score = int(row["brand_safety_score"])
+    estimated_cost = int(row["estimated_cost"])
+    format_label = direction["archetype"]
+
+    hooks = [
+        f"{direction['hook_set'][0]} - {creator} tests {brand} for {benefit}.",
+        f"{direction['hook_set'][1]} - a {style} take for {audience}.",
+        f"{direction['hook_set'][2]} - from a {niche} creator with {engagement_rate}% engagement.",
+    ]
+
+    caption = (
+        f"{creator} brings a {format_label} spin to {brand}, using {style} to show {benefit} for "
+        f"{audience}. Keep the voice {direction['caption_voice']} and {tone}. Built for {goal}; "
+        f"direction inspired by prior {past_campaign} work and a "
+        f"{engagement_rate}% engagement audience. #{normalize_text(category).replace(' ', '')} "
+        f"#{normalize_text(niche).replace(' ', '')}"
+    )
+
+    thumbnail_prompt = (
+        f"Vertical 9:16 image prompt for {creator}'s {format_label}: show {direction['thumbnail_scene']}. "
+        f"Include {brand} as a {category} product, one visual cue for {benefit}, and styling that feels "
+        f"{tone} for {audience}. Keep the integration brand-safe for a {safety_score}/100 creator profile, "
+        f"leave room for a short headline, and avoid implying actual generated media or unrealistic claims."
+    )
+
+    storyboard = []
+    for timestamp, beat in direction["storyboard"]:
+        storyboard.append(
+            (
+                timestamp,
+                (
+                    f"{beat} Use {creator}'s {style} format, speak to {audience}, and ladder back to "
+                    f"{brand}'s {benefit} benefit."
+                ),
+            )
+        )
+
+    cta = (
+        f"{direction['cta_style']} with {brand}. Best for {primary_kpi} and {secondary_kpi}; estimated creator "
+        f"cost is ${estimated_cost:,}, so keep the ask focused on one strong {format_label}."
+    )
+
+    return {
+        "hooks": hooks,
+        "caption": caption,
+        "thumbnail_prompt": thumbnail_prompt,
+        "storyboard": storyboard,
+        "cta": cta,
+    }
+
+
+def render_aigc_creative_pack(row: pd.Series, brief: Dict[str, object]) -> None:
+    creative_pack = generate_aigc_creative_pack(row, brief)
+
+    with st.expander("AIGC Creative Pack", expanded=False):
+        st.caption("Prompt and copy ideas only. This app does not generate actual images or videos.")
+
+        hook_cols = st.columns(3)
+        for index, hook in enumerate(creative_pack["hooks"], start=1):
+            hook_cols[index - 1].write(f"**Hook {index}**")
+            hook_cols[index - 1].write(hook)
+
+        st.write(f"**TikTok caption:** {creative_pack['caption']}")
+        st.write(f"**Image prompt:** {creative_pack['thumbnail_prompt']}")
+
+        st.write("**15-second storyboard:**")
+        storyboard_df = pd.DataFrame(
+            creative_pack["storyboard"],
+            columns=["Timestamp", "Beat"],
+        )
+        st.dataframe(storyboard_df, hide_index=True, use_container_width=True)
+
+        st.write(f"**Creator CTA:** {creative_pack['cta']}")
 
 
 def render_creator_card(row: pd.Series, brief: Dict[str, object]) -> None:
@@ -335,6 +676,8 @@ def render_creator_card(row: pd.Series, brief: Dict[str, object]) -> None:
     with st.expander("Creator-ready brief", expanded=True):
         st.write(generate_creator_brief(row, brief))
 
+    render_aigc_creative_pack(row, brief)
+
 
 st.markdown(
     """
@@ -351,7 +694,10 @@ st.markdown(
 
 
 st.title("CreatorMatch AI")
-st.caption("Campaign brief to ranked creator recommendations, creative angles, KPIs, safety flags, and creator-ready briefs.")
+st.caption(
+    "Campaign brief to ranked creator recommendations, creative angles, KPIs, safety flags, "
+    "creator-ready briefs, and AIGC creative packs."
+)
 
 st.info(
     "This demo uses a synthetic creator dataset for safe public portfolio use. "
@@ -434,8 +780,8 @@ else:
     st.subheader("How the demo works")
     st.write(
         "Fill out the campaign brief and CreatorMatch AI will rank creators using weighted fit across niche, "
-        "audience, engagement, brand safety, and budget. The recommendation details use rule-based logic so "
-        "the demo works consistently without external APIs."
+        "audience, engagement, brand safety, and budget. The recommendation details and AIGC creative packs "
+        "use rule-based logic so the demo works consistently without external APIs."
     )
 
     preview_cols = st.columns(4)
