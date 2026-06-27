@@ -20,6 +20,7 @@ CreatorMatch AI provides a lightweight decision-support workflow. Users enter a 
 - Top-5 ranked creator recommendations
 - Explainable weighted match score
 - Personalized creative angles by creator niche and content style
+- AIGC Creative Pack with hook options, caption, image prompt, CTA, and 15-second video storyboard
 - KPI suggestions based on campaign goal and creator format
 - Brand-safety, budget, audience, and claims-related risk flags
 - Creator-ready briefs for outreach or campaign planning
@@ -61,9 +62,12 @@ Niche fit compares the campaign category, goal, and product benefit against the 
 
 - Python
 - Streamlit
+- Streamlit Cloud
 - Pandas
 - Synthetic CSV creator dataset
 - Rule-based recommendation logic
+- GitHub
+- Codex-assisted development
 
 ## How to Run Locally
 
